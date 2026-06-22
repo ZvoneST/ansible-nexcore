@@ -1,0 +1,17 @@
+# Vault password — never commit (lives only on the control node)
+vars/secrets.yml
+
+# Ansible runtime artefacts
+*.retry
+.ansible/
+*.log
+
+# Ansible tests
+tests/static_checks.sh
+
+# Editor / OS noise
+*.swp
+*~
+.DS_Store
+.vscode/
+
