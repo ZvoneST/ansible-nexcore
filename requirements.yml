@@ -1,0 +1,10 @@
+---
+# Galaxy collections required by this project.
+# Install with: ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: ansible.posix       # firewalld, sefcontext, seboolean, mount helpers
+    version: ">=1.5.0"
+  - name: community.mysql     # mysql_db, mysql_user (database role)
+    version: ">=3.5.0"
+  - name: community.general   # filesystem module (storage role: mkfs.xfs)
+    version: ">=7.0.0"
