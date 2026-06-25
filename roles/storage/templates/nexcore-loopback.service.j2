@@ -1,0 +1,15 @@
+# Managed by Ansible — do not edit manually
+[Unit]
+Description=Attach NexCore LVM loopback backing file ({{ lvm_backing_file }})
+After=local-fs.target
+ConditionPathExists={{ lvm_backing_file }}
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c 'losetup --associated {{ lvm_backing_file }} | grep -q . || losetup --find {{ lvm_backing_file }}'
+ExecStartPost=/bin/bash -c 'vgchange --activate y {{ lvm_vg_name }} || true'
+ExecStop=/bin/bash -c 'dev=$(losetup --associated {{ lvm_backing_file }} --output NAME --noheadings | tr -d " "); [ -n "$dev" ] && losetup --detach "$dev" || true'
+
+[Install]
+WantedBy=multi-user.target

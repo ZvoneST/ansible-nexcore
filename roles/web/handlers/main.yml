@@ -1,0 +1,12 @@
+---
+- name: Restart httpd
+  ansible.builtin.service:
+    name: httpd
+    state: restarted
+
+- name: Restore SELinux contexts
+  ansible.builtin.command: "restorecon -Rv {{ item }}"
+  loop:
+    - "{{ wiki_root }}"
+    - "{{ wordpress_root }}"
+  changed_when: true

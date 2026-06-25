@@ -21,4 +21,5 @@ php_packages:
   - php-xml
   - php-mbstring
   - php-intl
-  - php-json
+  # php-json is not a standalone package on RHEL 9 / PHP 8 — the JSON
+  # extension is built into core (provided by php-common).

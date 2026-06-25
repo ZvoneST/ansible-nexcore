@@ -1,0 +1,95 @@
+---
+- name: Install Apache and PHP
+  ansible.builtin.dnf:
+    name: "{{ ['httpd'] + php_packages }}"
+    state: present
+
+- name: Create web root directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: apache
+    group: apache
+    mode: '0755'
+  loop:
+    - "{{ wiki_root }}"
+    - "{{ wordpress_root }}"
+
+- name: Download MediaWiki archive
+  ansible.builtin.get_url:
+    url: "{{ mediawiki_download_url }}"
+    dest: "/tmp/mediawiki-{{ mediawiki_version }}.tar.gz"
+    mode: '0644'
+
+- name: Extract MediaWiki
+  ansible.builtin.unarchive:
+    src: "/tmp/mediawiki-{{ mediawiki_version }}.tar.gz"
+    dest: "{{ wiki_root }}"
+    remote_src: true
+    extra_opts: [--strip-components=1]
+    creates: "{{ wiki_root }}/index.php"
+
+- name: Download WordPress archive
+  ansible.builtin.get_url:
+    url: "{{ wordpress_download_url }}"
+    dest: "/tmp/wordpress-{{ wordpress_version }}.tar.gz"
+    mode: '0644'
+
+- name: Extract WordPress
+  ansible.builtin.unarchive:
+    src: "/tmp/wordpress-{{ wordpress_version }}.tar.gz"
+    dest: "{{ wordpress_root }}"
+    remote_src: true
+    extra_opts: [--strip-components=1]
+    creates: "{{ wordpress_root }}/index.php"
+
+- name: Set ownership of web directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: apache
+    group: apache
+    recurse: true
+  loop:
+    - "{{ wiki_root }}"
+    - "{{ wordpress_root }}"
+
+- name: Apply httpd_sys_content_t SELinux context to web roots
+  community.general.sefcontext:
+    target: "{{ item }}(/.*)?"
+    setype: httpd_sys_rw_content_t
+    state: present
+  loop:
+    - "{{ wiki_root }}"
+    - "{{ wordpress_root }}"
+  notify: Restore SELinux contexts
+
+- name: Allow Apache to connect to the database (SELinux boolean)
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect_db
+    state: true
+    persistent: true
+
+- name: Deploy MediaWiki virtual host
+  ansible.builtin.template:
+    src: wiki_vhost.conf.j2
+    dest: /etc/httpd/conf.d/wiki.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart httpd
+
+- name: Deploy WordPress virtual host
+  ansible.builtin.template:
+    src: wordpress_vhost.conf.j2
+    dest: /etc/httpd/conf.d/wordpress.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart httpd
+
+- name: Enable and start Apache
+  ansible.builtin.service:
+    name: httpd
+    state: started
+    enabled: true

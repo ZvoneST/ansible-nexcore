@@ -1,0 +1,4 @@
+# Managed by Ansible — do not edit manually
+{% for user in nexcore_users %}
+{{ user.name }}/Company_Share  -rw,sync,soft  {{ hostvars['serverb']['ansible_host'] }}:{{ nfs_users_path }}/{{ user.name }}
+{% endfor %}

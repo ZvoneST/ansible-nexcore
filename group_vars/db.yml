@@ -39,7 +39,13 @@ nfs_users_path: "{{ nfs_export_path }}/users"
 lvm_vg_name: nexcore_vg
 lvm_lv_name: shared_lv
 lvm_lv_size: 10g
-# Physical volume device — adjust to the actual spare disk on serverb
-lvm_pv_device: /dev/sdb
+
+# serverb has no spare disk and its VG is fully allocated, so the PV is a
+# sparse file on /home attached through a loop device that is re-created at
+# boot by a small systemd unit. Keep the backing file a little larger than the
+# LV to leave room for VG metadata.
+lvm_backing_file: /home/nexcore-storage.img
+lvm_backing_file_size: 11g
+lvm_loop_service: nexcore-loopback.service
 
 nfs_allowed_network: "192.168.1.0/24"

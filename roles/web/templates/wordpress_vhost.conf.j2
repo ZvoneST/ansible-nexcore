@@ -1,0 +1,14 @@
+# Managed by Ansible — do not edit manually
+<VirtualHost *:80>
+    ServerName {{ www_fqdn }}
+    DocumentRoot {{ wordpress_root }}
+
+    <Directory {{ wordpress_root }}>
+        Options FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog  /var/log/httpd/{{ www_fqdn }}-error.log
+    CustomLog /var/log/httpd/{{ www_fqdn }}-access.log combined
+</VirtualHost>

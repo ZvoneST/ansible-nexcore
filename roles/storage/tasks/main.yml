@@ -1,0 +1,120 @@
+---
+- name: Install LVM and NFS server packages
+  ansible.builtin.dnf:
+    name:
+      - lvm2
+      - nfs-utils
+    state: present
+
+- name: Create sparse backing file for the loopback PV
+  ansible.builtin.command:
+    cmd: "truncate -s {{ lvm_backing_file_size }} {{ lvm_backing_file }}"
+    creates: "{{ lvm_backing_file }}"
+
+- name: Restrict permissions on the backing file
+  ansible.builtin.file:
+    path: "{{ lvm_backing_file }}"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Deploy systemd unit that attaches the loopback device at boot
+  ansible.builtin.template:
+    src: nexcore-loopback.service.j2
+    dest: "/etc/systemd/system/{{ lvm_loop_service }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Flush handlers so the unit is reloaded before it is started
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start the loopback attach service
+  ansible.builtin.systemd:
+    name: "{{ lvm_loop_service }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Discover the loop device backing the PV
+  ansible.builtin.command:
+    cmd: "losetup --noheadings --output NAME --associated {{ lvm_backing_file }}"
+  changed_when: false
+  register: lvm_loop_lookup
+
+- name: Fail if the loopback device is not attached
+  ansible.builtin.assert:
+    that: lvm_loop_lookup.stdout | trim | length > 0
+    fail_msg: "No loop device is attached for {{ lvm_backing_file }}."
+
+- name: Record the loop device path
+  ansible.builtin.set_fact:
+    lvm_pv_device: "{{ lvm_loop_lookup.stdout_lines[0] | trim }}"
+
+- name: Create LVM volume group
+  ansible.builtin.lvg:
+    vg: "{{ lvm_vg_name }}"
+    pvs: "{{ lvm_pv_device }}"
+    state: present
+
+- name: Create logical volume
+  ansible.builtin.lvol:
+    vg: "{{ lvm_vg_name }}"
+    lv: "{{ lvm_lv_name }}"
+    size: "{{ lvm_lv_size }}"
+    state: present
+
+- name: Format logical volume with XFS
+  community.general.filesystem:
+    fstype: xfs
+    dev: "/dev/{{ lvm_vg_name }}/{{ lvm_lv_name }}"
+    state: present
+
+- name: Create NFS export mount point
+  ansible.builtin.file:
+    path: "{{ nfs_export_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Mount the logical volume
+  ansible.builtin.mount:
+    path: "{{ nfs_export_path }}"
+    src: "/dev/{{ lvm_vg_name }}/{{ lvm_lv_name }}"
+    fstype: xfs
+    opts: "defaults,nofail,x-systemd.requires={{ lvm_loop_service }}"
+    state: mounted
+
+- name: Create users subdirectory
+  ansible.builtin.file:
+    path: "{{ nfs_users_path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create per-user NFS subdirectories
+  ansible.builtin.file:
+    path: "{{ nfs_users_path }}/{{ item.name }}"
+    state: directory
+    owner: "{{ item.name }}"
+    group: "{{ item.groups | first }}"
+    mode: "0750"
+  loop: "{{ nexcore_users }}"
+
+- name: Deploy /etc/exports from template
+  ansible.builtin.template:
+    src: exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Re-export NFS shares
+
+- name: Enable and start NFS server
+  ansible.builtin.service:
+    name: nfs-server
+    state: started
+    enabled: true

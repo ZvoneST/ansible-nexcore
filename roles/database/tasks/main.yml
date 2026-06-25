@@ -1,0 +1,60 @@
+---
+- name: Install MariaDB server
+  ansible.builtin.dnf:
+    name:
+      - mariadb-server
+      - python3-PyMySQL
+    state: present
+
+- name: Enable and start MariaDB
+  ansible.builtin.service:
+    name: mariadb
+    state: started
+    enabled: true
+
+- name: Set MariaDB root password
+  community.mysql.mysql_user:
+    name: root
+    host_all: true
+    password: "{{ mariadb_root_password }}"
+    login_unix_socket: /var/lib/mysql/mysql.sock
+    state: present
+  no_log: true
+
+- name: Deploy .my.cnf for root authentication
+  ansible.builtin.template:
+    src: my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Create application databases
+  community.mysql.mysql_db:
+    name: "{{ item }}"
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  loop:
+    - "{{ wiki_db_name }}"
+    - "{{ wordpress_db_name }}"
+
+- name: Create wiki database user
+  community.mysql.mysql_user:
+    name: "{{ wiki_db_user }}"
+    password: "{{ wiki_db_password }}"
+    priv: "{{ wiki_db_name }}.*:ALL"
+    host: "{{ hostvars['servera']['ansible_host'] }}"
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  no_log: true
+
+- name: Create WordPress database user
+  community.mysql.mysql_user:
+    name: "{{ wordpress_db_user }}"
+    password: "{{ wordpress_db_password }}"
+    priv: "{{ wordpress_db_name }}.*:ALL"
+    host: "{{ hostvars['servera']['ansible_host'] }}"
+    state: present
+    login_unix_socket: /var/lib/mysql/mysql.sock
+  no_log: true
