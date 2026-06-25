@@ -1,0 +1,64 @@
+---
+- name: Bootstrap ansible service account on managed hosts
+  hosts: all
+  become: true
+  vars_files:
+    - vars/secrets.yml
+
+  tasks:
+
+    # ── User & group ────────────────────────────────────────────────
+
+    - name: Create ansible group
+      ansible.builtin.group:
+        name: ansible
+        state: present
+
+    - name: Create ansible user
+      ansible.builtin.user:
+        name: ansible
+        group: ansible
+        groups: wheel
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: Set password for ansible user
+      ansible.builtin.user:
+        name: ansible
+        password: "{{ ansible_user_password | password_hash('sha512') }}"
+        update_password: always
+
+    # ── Sudo ────────────────────────────────────────────────────────
+
+    - name: Allow ansible user passwordless sudo
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/ansible
+        content: "ansible ALL=(ALL) NOPASSWD: ALL\n"
+        owner: root
+        group: root
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+
+    # ── SSH ─────────────────────────────────────────────────────────
+
+    - name: Create .ssh directory for ansible user
+      ansible.builtin.file:
+        path: /home/ansible/.ssh
+        state: directory
+        owner: ansible
+        group: ansible
+        mode: '0700'
+
+    - name: Install admin's public key into ansible's authorized_keys
+      ansible.builtin.authorized_key:
+        user: ansible
+        state: present
+        key: "{{ lookup('file', '/home/zvone/.ssh/id_ed25519.pub') }}"
+
+    - name: Enforce strict permissions on authorized_keys
+      ansible.builtin.file:
+        path: /home/ansible/.ssh/authorized_keys
+        owner: ansible
+        group: ansible
+        mode: '0600'
