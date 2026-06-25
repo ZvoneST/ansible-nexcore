@@ -1,0 +1,23 @@
+---
+- name: Install Postfix and mail utilities
+  ansible.builtin.dnf:
+    name:
+      - postfix
+      - mailx
+      - s-nail
+    state: present
+
+- name: Deploy Postfix main.cf from template
+  ansible.builtin.template:
+    src: main.cf.j2
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart postfix
+
+- name: Enable and start Postfix
+  ansible.builtin.service:
+    name: postfix
+    state: started
+    enabled: true

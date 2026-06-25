@@ -1,0 +1,22 @@
+# Managed by Ansible — do not edit manually
+domain={{ domain }}
+local=/{{ domain }}/
+expand-hosts
+
+# A records
+address=/{{ wiki_fqdn }}/{{ ansible_host }}
+address=/{{ www_fqdn }}/{{ ansible_host }}
+
+# MX record
+mx-host={{ domain }},{{ ansible_hostname }},10
+
+# Listen only on localhost and the LAN interface
+listen-address=127.0.0.1,{{ ansible_host }}
+
+# Do not forward short names to upstream
+domain-needed
+bogus-priv
+
+# Upstream resolvers (public DNS)
+server=8.8.8.8
+server=8.8.4.4

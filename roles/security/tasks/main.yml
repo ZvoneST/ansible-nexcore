@@ -1,0 +1,25 @@
+---
+- name: Ensure firewalld is installed and enabled
+  ansible.builtin.dnf:
+    name: firewalld
+    state: present
+
+- name: Start and enable firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Open required ports for this host
+  ansible.posix.firewalld:
+    port: "{{ item.port }}/{{ item.proto }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ firewall_ports }}"
+
+- name: Assert SELinux is enforcing
+  ansible.builtin.command: getenforce
+  register: selinux_status
+  changed_when: false
+  failed_when: selinux_status.stdout != 'Enforcing'
