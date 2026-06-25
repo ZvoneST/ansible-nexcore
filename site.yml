@@ -1,0 +1,60 @@
+---
+- name: Users and SSH provisioning — all managed hosts
+  hosts: all
+  roles:
+    - users
+  tags: [users]
+
+- name: Security hardening — all managed hosts
+  hosts: all
+  roles:
+    - security
+  tags: [security]
+
+- name: DNS (dnsmasq) — servera
+  hosts: web
+  roles:
+    - dns
+  tags: [dns]
+
+- name: MariaDB — serverb
+  hosts: db
+  roles:
+    - database
+  tags: [database]
+
+- name: LVM + NFS storage — serverb
+  hosts: db
+  roles:
+    - storage
+  tags: [storage]
+
+- name: Apache + MediaWiki + WordPress — servera
+  hosts: web
+  roles:
+    - web
+  tags: [web]
+
+- name: AutoFS per-user mounts — all managed hosts
+  hosts: all
+  roles:
+    - automount
+  tags: [automount]
+
+- name: Postfix email — servera
+  hosts: web
+  roles:
+    - email
+  tags: [email]
+
+- name: Centralised logging — all managed hosts
+  hosts: all
+  roles:
+    - logging
+  tags: [logging]
+
+- name: Patching and maintenance — all managed hosts
+  hosts: all
+  roles:
+    - patching
+  tags: [patching]
