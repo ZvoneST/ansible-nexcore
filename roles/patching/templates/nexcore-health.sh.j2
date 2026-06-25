@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Managed by Ansible — do not edit manually
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+HOSTNAME=$(hostname)
+UPTIME=$(uptime -p)
+DISK=$(df -h --output=source,pcent,used,avail -x tmpfs -x devtmpfs | tail -n +2)
+
+echo "=== Health Check: ${TIMESTAMP} ==="
+echo "Host:   ${HOSTNAME}"
+echo "Uptime: ${UPTIME}"
+echo ""
+echo "Disk usage:"
+echo "${DISK}"
+echo ""
+
+# Send daily summary to ops
+echo "Health check completed at ${TIMESTAMP} on ${HOSTNAME}. See {{ health_log }} for details." \
+  | mail -s "[NexCore] Daily health check: ${HOSTNAME}" ops01@{{ domain }}

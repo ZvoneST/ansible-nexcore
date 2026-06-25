@@ -1,0 +1,10 @@
+# Managed by Ansible — do not edit manually
+# Load TCP input module
+module(load="imtcp")
+input(type="imtcp" port="{{ rsyslog_port }}")
+
+# Store messages from serverb in a dedicated file
+if $fromhost-ip == '{{ hostvars["serverb"]["ansible_host"] }}' then {
+    action(type="omfile" file="/var/log/remote/serverb.log")
+    stop
+}

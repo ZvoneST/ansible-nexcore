@@ -1,0 +1,3 @@
+# Managed by Ansible — do not edit manually
+# Forward all messages to the central log server over TCP
+*.* @@{{ rsyslog_receiver_ip }}:{{ rsyslog_port }}

@@ -1,0 +1,5 @@
+---
+- name: Reboot if needed
+  ansible.builtin.reboot:
+    msg: "Ansible-initiated reboot after patching"
+    reboot_timeout: 600

@@ -1,0 +1,50 @@
+---
+- name: Update all packages
+  ansible.builtin.dnf:
+    name: '*'
+    state: latest
+    update_cache: true
+  notify: Reboot if needed
+  register: dnf_update
+
+- name: Check if reboot is required
+  ansible.builtin.command: needs-restarting -r
+  register: needs_restart
+  changed_when: needs_restart.rc == 1
+  failed_when: needs_restart.rc > 1
+  when: dnf_update.changed
+
+- name: Reboot if kernel or core libraries were updated
+  ansible.builtin.reboot:
+    msg: "Ansible-initiated reboot after patching"
+    reboot_timeout: 600
+  when:
+    - dnf_update.changed
+    - needs_restart.rc == 1
+
+- name: Deploy health check script
+  ansible.builtin.template:
+    src: nexcore-health.sh.j2
+    dest: /usr/local/bin/nexcore-health.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Schedule daily health check at 03:00
+  ansible.builtin.cron:
+    name: "nexcore health check"
+    minute: "0"
+    hour: "3"
+    job: "/usr/local/bin/nexcore-health.sh >> {{ health_log }} 2>&1"
+    user: root
+    state: present
+
+- name: Schedule weekly package cache cleanup on Sunday at 04:00
+  ansible.builtin.cron:
+    name: "nexcore pkg cache cleanup"
+    minute: "0"
+    hour: "4"
+    weekday: "0"
+    job: "dnf clean all >> /var/log/nexcore-dnf-clean.log 2>&1"
+    user: root
+    state: present

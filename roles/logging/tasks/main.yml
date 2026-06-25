@@ -1,0 +1,37 @@
+---
+- name: Install rsyslog
+  ansible.builtin.dnf:
+    name: rsyslog
+    state: present
+
+- name: Deploy rsyslog configuration for this host's role
+  ansible.builtin.template:
+    src: "rsyslog_{{ rsyslog_role }}.conf.j2"
+    dest: /etc/rsyslog.d/nexcore.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart rsyslog
+
+- name: Create remote log directory on receiver
+  ansible.builtin.file:
+    path: /var/log/remote
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: rsyslog_role == 'receiver'
+
+- name: Configure logrotate for nexcore-health.log
+  ansible.builtin.template:
+    src: nexcore-health.logrotate.j2
+    dest: /etc/logrotate.d/nexcore-health
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable and start rsyslog
+  ansible.builtin.service:
+    name: rsyslog
+    state: started
+    enabled: true
