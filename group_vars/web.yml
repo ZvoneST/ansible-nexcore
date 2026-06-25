@@ -1,0 +1,24 @@
+---
+# Apache virtual hosts
+wiki_fqdn: "wiki.{{ domain }}"
+www_fqdn: "www.{{ domain }}"
+
+wiki_root: /var/www/wiki
+wordpress_root: /var/www/wordpress
+
+# MediaWiki version to deploy
+mediawiki_version: "1.41.1"
+mediawiki_download_url: "https://releases.wikimedia.org/mediawiki/1.41/mediawiki-{{ mediawiki_version }}.tar.gz"
+
+# WordPress version to deploy
+wordpress_version: "6.5.3"
+wordpress_download_url: "https://wordpress.org/wordpress-{{ wordpress_version }}.tar.gz"
+
+# PHP settings
+php_packages:
+  - php
+  - php-mysqlnd
+  - php-xml
+  - php-mbstring
+  - php-intl
+  - php-json

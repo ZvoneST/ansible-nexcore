@@ -1,0 +1,34 @@
+---
+# Domain and network
+domain: nexcore.local
+dns_server_ip: "{{ hostvars['servera']['ansible_host'] }}"
+
+# Rsyslog
+rsyslog_receiver_ip: "{{ hostvars['servera']['ansible_host'] }}"
+rsyslog_port: 514
+
+# Health check log
+health_log: /var/log/nexcore-health.log
+health_log_rotate_days: 14
+
+# SSH key automation — keypairs are generated on the control node by the
+# users role, so no public keys are hardcoded here. Private keys stay on the
+# control node under ssh_key_dir for the admin to distribute to each user.
+ssh_key_dir: "{{ playbook_dir }}/files/ssh_keys"
+ssh_key_type: ed25519
+
+# User definitions — looped over by the users, automount, and email roles.
+# The public key is derived automatically from "{{ ssh_key_dir }}/<name>.pub".
+nexcore_users:
+  - name: ops01
+    groups: [ops]
+    sudo: true
+  - name: dev01
+    groups: [dev]
+    sudo: false
+  - name: dev02
+    groups: [dev]
+    sudo: false
+  - name: mkt01
+    groups: [marketing]
+    sudo: false
