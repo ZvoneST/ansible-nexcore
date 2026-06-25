@@ -1,0 +1,70 @@
+---
+- name: Ensure user groups exist
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ nexcore_users | map(attribute='groups') | flatten | unique }}"
+
+- name: Ensure user accounts exist
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    groups: "{{ item.groups }}"
+    append: true
+    shell: /bin/bash
+    create_home: true
+    password_lock: true
+    state: present
+  loop: "{{ nexcore_users }}"
+
+- name: Ensure control-node SSH key directory exists
+  ansible.builtin.file:
+    path: "{{ ssh_key_dir }}"
+    state: directory
+    mode: '0700'
+  delegate_to: localhost
+  run_once: true
+  vars:
+    ansible_become: false   # never sudo on the control node
+
+- name: Generate per-user SSH keypairs on the control node
+  community.crypto.openssh_keypair:
+    path: "{{ ssh_key_dir }}/{{ item.name }}"
+    type: "{{ ssh_key_type }}"
+    comment: "{{ item.name }}@{{ domain }}"
+    mode: '0600'
+    regenerate: never       # keep existing keys — idempotent and stable
+  loop: "{{ nexcore_users }}"
+  delegate_to: localhost
+  run_once: true
+  vars:
+    ansible_become: false
+
+- name: Deploy SSH authorised keys
+  ansible.builtin.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ lookup('file', ssh_key_dir ~ '/' ~ item.name ~ '.pub') }}"
+    state: present
+    exclusive: true
+  loop: "{{ nexcore_users }}"
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: Restart sshd
+
+- name: Grant sudo to privileged users via sudoers.d
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ item.name }}"
+    content: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL\n"
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  loop: "{{ nexcore_users | selectattr('sudo', 'equalto', true) | list }}"
+
+- name: Remove sudoers.d entries for non-privileged users
+  ansible.builtin.file:
+    path: "/etc/sudoers.d/{{ item.name }}"
+    state: absent
+  loop: "{{ nexcore_users | selectattr('sudo', 'equalto', false) | list }}"

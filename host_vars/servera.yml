@@ -1,0 +1,11 @@
+---
+# Ports open on servera
+firewall_ports:
+  - { port: 80, proto: tcp }   # HTTP
+  - { port: 25, proto: tcp }   # SMTP
+  - { port: 53, proto: tcp }   # DNS TCP
+  - { port: 53, proto: udp }   # DNS UDP
+  - { port: 514, proto: tcp }  # rsyslog receiver
+
+# rsyslog role: this host receives logs
+rsyslog_role: receiver

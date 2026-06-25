@@ -1,0 +1,18 @@
+---
+# ansible-lint configuration
+profile: basic
+
+exclude_paths:
+  - .cache/
+  - .github/
+  - vars/secrets.yml
+
+# These are intentional design choices in this project, not defects:
+#   - command-instead-of-module: getenforce / exportfs / restorecon / dig have
+#     no idempotent module equivalent and are guarded with changed_when.
+#   - var-naming[no-role-prefix]: variables are shared across roles by design
+#     (the spec mandates a single authoritative nexcore_users list, etc.).
+skip_list:
+  - command-instead-of-module
+  - var-naming[no-role-prefix]
+  - fqcn[action-core]
