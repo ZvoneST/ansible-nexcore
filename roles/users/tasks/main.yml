@@ -9,6 +9,10 @@
   ansible.builtin.group:
     name: "{{ company_share_group }}"
     state: present
+  # Create it for real even under --check: later tasks add users to this group,
+  # and the user module fails validation if the group does not actually exist.
+  # Group creation is idempotent and safe to run in check mode.
+  check_mode: false
 
 - name: Ensure user accounts exist
   ansible.builtin.user:

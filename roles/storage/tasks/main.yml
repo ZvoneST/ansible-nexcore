@@ -41,6 +41,9 @@
   ansible.builtin.command:
     cmd: "losetup --noheadings --output NAME --associated {{ lvm_backing_file }}"
   changed_when: false
+  # Read-only losetup query — run it even under --check so the assert below
+  # sees the real attachment state instead of an empty (skipped) result.
+  check_mode: false
   register: lvm_loop_lookup
 
 - name: Fail if the loopback device is not attached
