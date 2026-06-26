@@ -34,7 +34,9 @@ mariadb_bind_address: "{{ ansible_host }}"
 
 # NFS / LVM storage
 nfs_export_path: /mnt/shared
-nfs_users_path: "{{ nfs_export_path }}/users"
+# Single shared directory that every user's ~/Company_Share mounts, so all
+# staff see the same files across servera and serverb.
+nfs_share_path: "{{ nfs_export_path }}/Company_Share"
 
 lvm_vg_name: nexcore_vg
 lvm_lv_name: shared_lv

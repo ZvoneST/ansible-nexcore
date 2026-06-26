@@ -5,10 +5,15 @@
     state: present
   loop: "{{ nexcore_users | map(attribute='groups') | flatten | unique }}"
 
+- name: Ensure the shared Company_Share group exists
+  ansible.builtin.group:
+    name: "{{ company_share_group }}"
+    state: present
+
 - name: Ensure user accounts exist
   ansible.builtin.user:
     name: "{{ item.name }}"
-    groups: "{{ item.groups }}"
+    groups: "{{ item.groups + [company_share_group] }}"
     append: true
     shell: /bin/bash
     create_home: true

@@ -17,6 +17,11 @@ health_log_rotate_days: 14
 ssh_key_dir: "{{ playbook_dir }}/files/ssh_keys"
 ssh_key_type: ed25519
 
+# Shared Company_Share group. Every user is added to this group so they can
+# all read and write the single common NFS directory mounted at
+# ~/Company_Share (collaborative BR-06 model).
+company_share_group: company
+
 # User definitions — looped over by the users, automount, and email roles.
 # The public key is derived automatically from "{{ ssh_key_dir }}/<name>.pub".
 nexcore_users:

@@ -87,22 +87,15 @@
     opts: "defaults,nofail,x-systemd.requires={{ lvm_loop_service }}"
     state: mounted
 
-- name: Create users subdirectory
+- name: Create the shared Company_Share directory
   ansible.builtin.file:
-    path: "{{ nfs_users_path }}"
+    path: "{{ nfs_share_path }}"
     state: directory
     owner: root
-    group: root
-    mode: "0755"
-
-- name: Create per-user NFS subdirectories
-  ansible.builtin.file:
-    path: "{{ nfs_users_path }}/{{ item.name }}"
-    state: directory
-    owner: "{{ item.name }}"
-    group: "{{ item.groups | first }}"
-    mode: "0750"
-  loop: "{{ nexcore_users }}"
+    group: "{{ company_share_group }}"
+    # 2770: setgid so files created by any user inherit the shared group,
+    # rwx for the group (all staff), nothing for others.
+    mode: "2770"
 
 - name: Deploy /etc/exports from template
   ansible.builtin.template:
