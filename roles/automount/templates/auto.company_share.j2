@@ -1,4 +1,7 @@
 # Managed by Ansible — do not edit manually
+# Direct-map entries: each key is the absolute mount point inside the user's
+# home. nfs_users_path lives in group_vars/db.yml, so read it from the NFS
+# server's hostvars — it is not defined on web-group hosts otherwise.
 {% for user in nexcore_users %}
-{{ user.name }}/Company_Share  -rw,sync,soft  {{ hostvars['serverb']['ansible_host'] }}:{{ nfs_users_path }}/{{ user.name }}
+/home/{{ user.name }}/Company_Share  -rw,sync,soft  {{ hostvars['serverb']['ansible_host'] }}:{{ hostvars['serverb']['nfs_users_path'] }}/{{ user.name }}
 {% endfor %}

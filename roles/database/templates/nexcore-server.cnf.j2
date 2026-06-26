@@ -1,0 +1,9 @@
+# Managed by Ansible — do not edit manually
+[mariadb]
+# Bind to the LAN interface so servera can reach the DB over the network.
+bind-address={{ mariadb_bind_address }}
+
+# Match GRANTs by client IP only. The application users are granted from
+# servera's IP, so MariaDB must NOT reverse-resolve the connecting host to a
+# name (which would turn 192.168.50.85 into "servera" and break auth).
+skip-name-resolve

@@ -12,6 +12,18 @@
     state: started
     enabled: true
 
+- name: Deploy MariaDB server configuration
+  ansible.builtin.template:
+    src: nexcore-server.cnf.j2
+    dest: /etc/my.cnf.d/nexcore-server.cnf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart MariaDB
+
+- name: Apply MariaDB configuration before managing users
+  ansible.builtin.meta: flush_handlers
+
 - name: Set MariaDB root password
   community.mysql.mysql_user:
     name: root

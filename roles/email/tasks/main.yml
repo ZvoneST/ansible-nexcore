@@ -3,7 +3,6 @@
   ansible.builtin.dnf:
     name:
       - postfix
-      - mailx
       - s-nail
     state: present
 

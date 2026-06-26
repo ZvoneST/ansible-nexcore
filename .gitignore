@@ -1,6 +1,10 @@
 # Vault password — never commit (lives only on the control node)
 vars/secrets.yml
 
+# MediaWiki installer output — contains DB password + secret keys.
+# The deployed copy is rendered from a template by the web role.
+LocalSettings.php
+
 # Generated per-user SSH private keys — never commit (public .pub files are fine)
 files/ssh_keys/*
 

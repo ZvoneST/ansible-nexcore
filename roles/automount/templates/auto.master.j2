@@ -1,3 +1,6 @@
 # Managed by Ansible — do not edit manually
-# Mount point base  Map file                      Options
-/home              /etc/auto.company_share        --timeout=60
+# Direct map (/-): autofs mounts ONLY at the absolute paths listed in the map
+# file. It must not use /home as an indirect base, which would shadow every
+# real home directory and lock users (and Ansible) out of the host.
+# Mount key   Map file                      Options
+/-            /etc/auto.company_share        --timeout=60
