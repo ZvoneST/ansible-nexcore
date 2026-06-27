@@ -84,6 +84,7 @@ ok: [serverb] => (item={'port': 3306, 'proto': 'tcp'})
 ok: [servera] => (item={'port': 53, 'proto': 'tcp'})
 ok: [servera] => (item={'port': 53, 'proto': 'udp'})
 ok: [servera] => (item={'port': 514, 'proto': 'tcp'})
+ok: [servera] => (item={'port': 143, 'proto': 'tcp'})
 
 TASK [security : Assert SELinux is enforcing] **********************************
 ok: [servera]
@@ -290,6 +291,18 @@ ok: [servera]
 TASK [email : Enable and start Postfix] ****************************************
 ok: [servera]
 
+TASK [email : Install Dovecot IMAP server] *************************************
+ok: [servera]
+
+TASK [email : Deploy Dovecot configuration from template] **********************
+ok: [servera]
+
+TASK [email : Enable and start Dovecot] ****************************************
+ok: [servera]
+
+TASK [email : Allow mutt to use the plaintext IMAP server] *********************
+ok: [servera]
+
 PLAY [Centralised logging — all managed hosts] *********************************
 
 TASK [Gathering Facts] *********************************************************
@@ -300,7 +313,7 @@ TASK [logging : Install rsyslog] ***********************************************
 ok: [servera]
 ok: [serverb]
 
-TASK [logging : Deploy rsyslog configuration for this host role] *************
+TASK [logging : Deploy rsyslog configuration for this host role] ***************
 ok: [servera]
 ok: [serverb]
 
@@ -347,6 +360,6 @@ ok: [servera]
 ok: [serverb]
 
 PLAY RECAP *********************************************************************
-servera                    : ok=51   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+servera                    : ok=55   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
 serverb                    : ok=58   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
 ```

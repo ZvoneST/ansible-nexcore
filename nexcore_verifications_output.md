@@ -19,8 +19,8 @@ ok: [serverb] => (item={'name': 'ops01', 'groups': ['ops'], 'sudo': True})
 ok: [servera] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [servera] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
-ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
+ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 ok: [serverb] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 
 TASK [Stat sudoers files for privileged users] *********************************
@@ -374,8 +374,8 @@ ok: [serverb] => (item=mkt01) => {
 }
 
 TASK [Read sshd_config] ********************************************************
-ok: [serverb]
 ok: [servera]
+ok: [serverb]
 
 TASK [Assert SSH password authentication is disabled] **************************
 ok: [servera] => {
@@ -483,6 +483,15 @@ ok: [servera] => (item=514/tcp) => {
     },
     "msg": "All assertions passed"
 }
+ok: [servera] => (item=143/tcp) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": {
+        "port": 143,
+        "proto": "tcp"
+    },
+    "msg": "All assertions passed"
+}
 
 TASK [Assert rsyslog is running] ***********************************************
 ok: [servera] => {
@@ -586,7 +595,7 @@ TASK [Resolve wiki and www A records] ******************************************
 ok: [servera] => (item=wiki.nexcore.local)
 ok: [servera] => (item=www.nexcore.local)
 
-TASK [Assert A records resolve to servera IP] ********************************
+TASK [Assert A records resolve to servera IP] **********************************
 ok: [servera] => (item=wiki.nexcore.local) => {
     "ansible_loop_var": "item",
     "changed": false,
@@ -599,8 +608,8 @@ ok: [servera] => (item=wiki.nexcore.local) => {
             "wiki.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.025020",
-        "end": "2026-06-27 10:50:13.777089",
+        "delta": "0:00:00.025320",
+        "end": "2026-06-27 15:02:26.605548",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -619,7 +628,7 @@ ok: [servera] => (item=wiki.nexcore.local) => {
         "item": "wiki.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 10:50:13.752069",
+        "start": "2026-06-27 15:02:26.580228",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -641,8 +650,8 @@ ok: [servera] => (item=www.nexcore.local) => {
             "www.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.024924",
-        "end": "2026-06-27 10:50:14.996685",
+        "delta": "0:00:00.025336",
+        "end": "2026-06-27 15:02:27.645691",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -661,7 +670,7 @@ ok: [servera] => (item=www.nexcore.local) => {
         "item": "www.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 10:50:14.971761",
+        "start": "2026-06-27 15:02:27.620355",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -845,8 +854,8 @@ ok: [servera] => (item=/var/www/wiki) => {
             "-Zd",
             "/var/www/wiki"
         ],
-        "delta": "0:00:00.003515",
-        "end": "2026-06-27 10:50:19.340641",
+        "delta": "0:00:00.003579",
+        "end": "2026-06-27 15:02:32.237489",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -865,7 +874,7 @@ ok: [servera] => (item=/var/www/wiki) => {
         "item": "/var/www/wiki",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 10:50:19.337126",
+        "start": "2026-06-27 15:02:32.233910",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wiki",
@@ -886,8 +895,8 @@ ok: [servera] => (item=/var/www/wordpress) => {
             "-Zd",
             "/var/www/wordpress"
         ],
-        "delta": "0:00:00.003367",
-        "end": "2026-06-27 10:50:20.239127",
+        "delta": "0:00:01.004901",
+        "end": "2026-06-27 15:02:34.319620",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -906,7 +915,7 @@ ok: [servera] => (item=/var/www/wordpress) => {
         "item": "/var/www/wordpress",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 10:50:20.235760",
+        "start": "2026-06-27 15:02:33.314719",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wordpress",
@@ -939,6 +948,57 @@ TASK [Read postfix main.cf] ****************************************************
 ok: [servera]
 
 TASK [Assert postfix accepts mail for the domain] ******************************
+ok: [servera] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Read postfix home_mailbox] ***********************************************
+ok: [servera]
+
+TASK [Assert postfix delivers into the shared Maildir] *************************
+ok: [servera] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Assert dovecot is running] ***********************************************
+ok: [servera] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Read effective dovecot protocols and mail_location] **********************
+ok: [servera]
+
+TASK [Assert dovecot serves IMAP from the same Maildir as postfix] *************
+ok: [servera] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Check the IMAP port is listening] ****************************************
+ok: [servera]
+
+TASK [Assert dovecot is listening on the IMAP port] ****************************
+ok: [servera] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Locate the mutt IMAP client] *********************************************
+ok: [servera]
+
+TASK [Assert a mail client (mutt) is installed for retrieval] ******************
+ok: [servera] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Read system mutt defaults] ***********************************************
+ok: [servera]
+
+TASK [Assert mutt is allowed to use the plaintext IMAP server] *****************
 ok: [servera] => {
     "changed": false,
     "msg": "All assertions passed"
@@ -1046,6 +1106,6 @@ ok: [serverb] => {
 }
 
 PLAY RECAP *********************************************************************
-servera                    : ok=46   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+servera                    : ok=57   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 serverb                    : ok=48   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
