@@ -29,6 +29,12 @@
     - storage
   tags: [storage]
 
+- name: Nightly database backups — serverb
+  hosts: db
+  roles:
+    - backup
+  tags: [backup]
+
 - name: Apache + MediaWiki + WordPress — servera
   hosts: web
   roles:

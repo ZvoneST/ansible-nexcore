@@ -1,0 +1,429 @@
+---
+# ============================================================================
+# verify.yml — post-deployment validation
+#
+# Encodes the manual checks from Section 17 of the implementation guide as
+# ansible.builtin.assert tasks, so the whole deployment can be validated with
+# a single command AFTER site.yml has run:
+#
+#     ansible-playbook -i inventory.ini verify.yml
+#
+# Asserts cover deterministic state (users, groups, sudoers, firewall ports,
+# SELinux mode, services, config files, DB/NFS/LVM, cron jobs). Application
+# HTTP responses are reported informationally (debug) rather than asserted,
+# because an un-installed MediaWiki/WordPress legitimately returns non-200.
+# ============================================================================
+
+# ── All managed hosts: users, security, logging base, automount, patching ──
+- name: "Verify — users, security, logging, automount, patching (all hosts)"
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+
+    # BR-05 — user provisioning
+    - name: Gather all required groups
+      ansible.builtin.getent:
+        database: group
+        key: "{{ item }}"
+      loop: "{{ nexcore_users | map(attribute='groups') | flatten | unique }}"
+
+    - name: Assert each user account exists
+      ansible.builtin.command: "id {{ item.name }}"
+      changed_when: false
+      loop: "{{ nexcore_users }}"
+
+    - name: Stat sudoers files for privileged users
+      ansible.builtin.stat:
+        path: "/etc/sudoers.d/{{ item.name }}"
+      register: sudo_files
+      loop: "{{ nexcore_users | selectattr('sudo', 'equalto', true) | list }}"
+
+    - name: Assert sudoers file present for privileged users
+      ansible.builtin.assert:
+        that: item.stat.exists
+        fail_msg: "Missing /etc/sudoers.d/{{ item.item.name }} for a sudo user"
+      loop: "{{ sudo_files.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Stat sudoers files for non-privileged users
+      ansible.builtin.stat:
+        path: "/etc/sudoers.d/{{ item.name }}"
+      register: nosudo_files
+      loop: "{{ nexcore_users | selectattr('sudo', 'equalto', false) | list }}"
+
+    - name: Assert NO sudoers file for non-privileged users
+      ansible.builtin.assert:
+        that: not item.stat.exists
+        fail_msg: "/etc/sudoers.d/{{ item.item.name }} should not exist (non-sudo user)"
+      loop: "{{ nosudo_files.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Read sshd_config
+      ansible.builtin.command: "grep -E '^PasswordAuthentication' /etc/ssh/sshd_config"
+      register: sshd_pw
+      changed_when: false
+
+    - name: Assert SSH password authentication is disabled
+      ansible.builtin.assert:
+        that: "'PasswordAuthentication no' in sshd_pw.stdout"
+        fail_msg: "PasswordAuthentication is not set to 'no' in sshd_config"
+
+    # BR-08 — security
+    - name: Collect service facts
+      ansible.builtin.service_facts:
+
+    - name: Assert firewalld is running
+      ansible.builtin.assert:
+        that: "ansible_facts.services['firewalld.service'].state == 'running'"
+        fail_msg: "firewalld is not running"
+
+    - name: Get SELinux mode
+      ansible.builtin.command: getenforce
+      register: selinux_mode
+      changed_when: false
+
+    - name: Assert SELinux is enforcing
+      ansible.builtin.assert:
+        that: "selinux_mode.stdout == 'Enforcing'"
+        fail_msg: "SELinux is not enforcing (got '{{ selinux_mode.stdout }}')"
+
+    - name: List open firewall ports
+      ansible.builtin.command: firewall-cmd --list-ports
+      register: fw_ports
+      changed_when: false
+
+    - name: Assert each required port is open
+      ansible.builtin.assert:
+        that: "(item.port ~ '/' ~ item.proto) in fw_ports.stdout"
+        fail_msg: "Port {{ item.port }}/{{ item.proto }} is not open in firewalld"
+      loop: "{{ firewall_ports }}"
+      loop_control:
+        label: "{{ item.port }}/{{ item.proto }}"
+
+    # BR-09/BR-11 — logging + rotation
+    - name: Assert rsyslog is running
+      ansible.builtin.assert:
+        that: "ansible_facts.services['rsyslog.service'].state == 'running'"
+        fail_msg: "rsyslog is not running"
+
+    - name: Stat rsyslog nexcore config
+      ansible.builtin.stat:
+        path: /etc/rsyslog.d/nexcore.conf
+      register: rsyslog_cfg
+
+    - name: Assert rsyslog nexcore config present
+      ansible.builtin.assert:
+        that: rsyslog_cfg.stat.exists
+        fail_msg: "/etc/rsyslog.d/nexcore.conf missing"
+
+    - name: Read logrotate config for health log
+      ansible.builtin.command: cat /etc/logrotate.d/nexcore-health
+      register: logrotate_cfg
+      changed_when: false
+
+    - name: Assert health log rotates daily and is kept 14 days
+      ansible.builtin.assert:
+        that:
+          - "'daily' in logrotate_cfg.stdout"
+          - "('rotate ' ~ (health_log_rotate_days | string)) in logrotate_cfg.stdout"
+          - "'compress' in logrotate_cfg.stdout"
+        fail_msg: "logrotate policy for {{ health_log }} is not daily/rotate {{ health_log_rotate_days }}/compress"
+
+    # BR-06 — automount
+    - name: Stat autofs master drop-in
+      ansible.builtin.stat:
+        path: /etc/auto.master.d/nexcore.autofs
+      register: autofs_master
+
+    - name: Stat autofs company_share map
+      ansible.builtin.stat:
+        path: /etc/auto.company_share
+      register: autofs_map
+
+    - name: Assert autofs config files present and service running
+      ansible.builtin.assert:
+        that:
+          - autofs_master.stat.exists
+          - autofs_map.stat.exists
+          - "ansible_facts.services['autofs.service'].state == 'running'"
+        fail_msg: "AutoFS is not fully configured / running"
+
+    # BR-10 — patching cron jobs + health script
+    - name: Stat health check script
+      ansible.builtin.stat:
+        path: /usr/local/bin/nexcore-health.sh
+      register: health_script
+
+    - name: Assert health check script is present and executable
+      ansible.builtin.assert:
+        that:
+          - health_script.stat.exists
+          - health_script.stat.mode == '0755'
+        fail_msg: "/usr/local/bin/nexcore-health.sh missing or not 0755"
+
+    - name: Read root crontab
+      ansible.builtin.command: crontab -l -u root
+      register: root_cron
+      changed_when: false
+
+    - name: Assert both cron jobs are scheduled
+      ansible.builtin.assert:
+        that:
+          - "'nexcore health check' in root_cron.stdout"
+          - "'nexcore pkg cache cleanup' in root_cron.stdout"
+        fail_msg: "Expected nexcore cron jobs not found in root crontab"
+
+# ── servera (web group): DNS, web, email, rsyslog receiver ──────────────────
+- name: "Verify — DNS, web, email, log receiver (servera)"
+  hosts: web
+  become: true
+  gather_facts: true
+  tasks:
+
+    # BR-04 — DNS
+    - name: Assert dnsmasq is running
+      ansible.builtin.service_facts:
+
+    - name: Assert dnsmasq service running
+      ansible.builtin.assert:
+        that: "ansible_facts.services['dnsmasq.service'].state == 'running'"
+        fail_msg: "dnsmasq is not running"
+
+    - name: Resolve wiki and www A records
+      ansible.builtin.command: "dig +short {{ item }} @127.0.0.1"
+      register: dig_a
+      changed_when: false
+      loop:
+        - "{{ wiki_fqdn }}"
+        - "{{ www_fqdn }}"
+
+    - name: Assert A records resolve to servera's IP
+      ansible.builtin.assert:
+        that: "ansible_host in item.stdout"
+        fail_msg: "{{ item.item }} did not resolve to {{ ansible_host }}"
+      loop: "{{ dig_a.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Resolve MX record
+      ansible.builtin.command: "dig +short MX {{ domain }} @127.0.0.1"
+      register: dig_mx
+      changed_when: false
+
+    - name: Assert MX record exists for the domain
+      ansible.builtin.assert:
+        that: "dig_mx.stdout | length > 0"
+        fail_msg: "No MX record returned for {{ domain }}"
+
+    # BR-01/BR-02/BR-08 — web + vhosts + SELinux context
+    - name: Assert httpd is running
+      ansible.builtin.assert:
+        that: "ansible_facts.services['httpd.service'].state == 'running'"
+        fail_msg: "httpd is not running"
+
+    - name: Stat both vhost config files
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: vhosts
+      loop:
+        - /etc/httpd/conf.d/wiki.conf
+        - /etc/httpd/conf.d/wordpress.conf
+
+    - name: Assert both vhost files exist
+      ansible.builtin.assert:
+        that: item.stat.exists
+        fail_msg: "{{ item.item }} missing"
+      loop: "{{ vhosts.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Check SELinux context on web roots
+      ansible.builtin.command: "ls -Zd {{ item }}"
+      register: web_ctx
+      changed_when: false
+      loop:
+        - "{{ wiki_root }}"
+        - "{{ wordpress_root }}"
+
+    - name: Assert web roots carry httpd_sys_rw_content_t
+      ansible.builtin.assert:
+        that: "'httpd_sys_rw_content_t' in item.stdout"
+        fail_msg: "{{ item.item }} is missing the httpd_sys_rw_content_t SELinux type"
+      loop: "{{ web_ctx.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Probe HTTP endpoints (informational only)
+      ansible.builtin.command: >
+        curl -s -o /dev/null -w "%{http_code}" http://{{ item }}
+      register: http_probe
+      changed_when: false
+      failed_when: false
+      loop:
+        - "{{ wiki_fqdn }}"
+        - "{{ www_fqdn }}"
+
+    - name: Show HTTP status codes
+      ansible.builtin.debug:
+        msg: "http://{{ item.item }} -> HTTP {{ item.stdout }} (200/30x once the app is installed)"
+      loop: "{{ http_probe.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    # BR-07 — email
+    - name: Assert postfix is running
+      ansible.builtin.assert:
+        that: "ansible_facts.services['postfix.service'].state == 'running'"
+        fail_msg: "postfix is not running"
+
+    - name: Read postfix main.cf
+      ansible.builtin.command: postconf -x mydestination
+      register: postfix_dest
+      changed_when: false
+
+    - name: Assert postfix accepts mail for the domain
+      ansible.builtin.assert:
+        that: "domain in postfix_dest.stdout"
+        fail_msg: "{{ domain }} not present in postfix mydestination"
+
+    # BR-09 — receiver side
+    - name: Stat remote log directory
+      ansible.builtin.stat:
+        path: /var/log/remote
+      register: remote_dir
+
+    - name: Assert /var/log/remote exists on the receiver
+      ansible.builtin.assert:
+        that: remote_dir.stat.exists and remote_dir.stat.isdir
+        fail_msg: "/var/log/remote is missing on the rsyslog receiver"
+
+# ── serverb (db group): MariaDB, LVM, NFS, rsyslog forwarder ────────────────
+- name: "Verify — database, LVM, NFS, log forwarder (serverb)"
+  hosts: db
+  become: true
+  gather_facts: true
+  tasks:
+
+    # BR-01/BR-02 — database
+    - name: Collect service facts
+      ansible.builtin.service_facts:
+
+    - name: Assert mariadb is running
+      ansible.builtin.assert:
+        that: "ansible_facts.services['mariadb.service'].state == 'running'"
+        fail_msg: "mariadb is not running"
+
+    - name: List databases
+      ansible.builtin.command: mysql -N -B -e "SHOW DATABASES;"
+      register: db_list
+      changed_when: false
+      no_log: true
+
+    - name: Assert wiki and wordpress databases exist
+      ansible.builtin.assert:
+        that:
+          - "wiki_db_name in db_list.stdout_lines"
+          - "wordpress_db_name in db_list.stdout_lines"
+        fail_msg: "Expected databases {{ wiki_db_name }} / {{ wordpress_db_name }} not found"
+
+    # BR-03 — LVM + mount
+    - name: Stat logical volume device
+      ansible.builtin.stat:
+        path: "/dev/{{ lvm_vg_name }}/{{ lvm_lv_name }}"
+      register: lv_dev
+
+    - name: Assert logical volume exists
+      ansible.builtin.assert:
+        that: lv_dev.stat.exists
+        fail_msg: "LV /dev/{{ lvm_vg_name }}/{{ lvm_lv_name }} not found"
+
+    - name: Check the share is mounted
+      ansible.builtin.command: "mountpoint -q {{ nfs_export_path }}"
+      register: mp
+      changed_when: false
+      failed_when: mp.rc != 0
+
+    # BR-03/BR-06 — NFS export + per-user dirs
+    - name: Read active NFS exports
+      ansible.builtin.command: exportfs -v
+      register: exports
+      changed_when: false
+
+    - name: Assert the share is exported
+      ansible.builtin.assert:
+        that: "nfs_export_path in exports.stdout"
+        fail_msg: "{{ nfs_export_path }} is not exported"
+
+    - name: Stat the shared Company_Share directory
+      ansible.builtin.stat:
+        path: "{{ nfs_share_path }}"
+      register: share_dir
+
+    - name: Assert Company_Share exists with the shared group and setgid perms
+      ansible.builtin.assert:
+        that:
+          - share_dir.stat.exists
+          - share_dir.stat.isdir
+          - share_dir.stat.gr_name == company_share_group
+          - share_dir.stat.mode == '2770'
+        fail_msg: "{{ nfs_share_path }} missing or has wrong group/permissions"
+
+    # nfs-server.service runs with RemainAfterExit, so it sits in
+    # "active (exited)" — which service_facts reports as state=stopped even
+    # though NFS is up. Check ActiveState directly instead.
+    - name: Check nfs-server is active
+      ansible.builtin.command: systemctl is-active nfs-server
+      register: nfs_active
+      changed_when: false
+      failed_when: nfs_active.stdout != "active"
+
+    # BR-09 — forwarder side
+    - name: Read rsyslog nexcore config
+      ansible.builtin.command: cat /etc/rsyslog.d/nexcore.conf
+      register: fwd_cfg
+      changed_when: false
+
+    - name: Assert forwarder targets the receiver over TCP
+      ansible.builtin.assert:
+        that: "('@@' ~ rsyslog_receiver_ip ~ ':' ~ (rsyslog_port | string)) in fwd_cfg.stdout"
+        fail_msg: "rsyslog forwarder is not pointed at {{ rsyslog_receiver_ip }}:{{ rsyslog_port }} over TCP"
+
+    # Bonus — nightly database backups
+    - name: Stat the backup directory
+      ansible.builtin.stat:
+        path: "{{ backup_dir }}"
+      register: backup_dir_stat
+
+    - name: Assert the backup directory exists, is root-owned and private
+      ansible.builtin.assert:
+        that:
+          - backup_dir_stat.stat.exists
+          - backup_dir_stat.stat.isdir
+          - backup_dir_stat.stat.pw_name == 'root'
+          - backup_dir_stat.stat.mode == '0700'
+        fail_msg: "{{ backup_dir }} missing or has wrong owner/permissions"
+
+    - name: Stat the backup script
+      ansible.builtin.stat:
+        path: /usr/local/bin/nexcore-db-backup.sh
+      register: backup_script
+
+    - name: Assert the backup script is present and executable by root only
+      ansible.builtin.assert:
+        that:
+          - backup_script.stat.exists
+          - backup_script.stat.mode == '0700'
+        fail_msg: "/usr/local/bin/nexcore-db-backup.sh missing or not 0700"
+
+    - name: Read root crontab
+      ansible.builtin.command: crontab -l -u root
+      register: backup_cron
+      changed_when: false
+
+    - name: Assert the nightly backup cron job is scheduled
+      ansible.builtin.assert:
+        that: "'nexcore database backup' in backup_cron.stdout"
+        fail_msg: "'nexcore database backup' cron job not found in root crontab"

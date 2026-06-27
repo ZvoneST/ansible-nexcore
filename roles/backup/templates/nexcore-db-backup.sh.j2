@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Managed by Ansible — do not edit manually
+# Nightly MariaDB dump for NexCore. Authenticates via /root/.my.cnf.
+set -euo pipefail
+
+BACKUP_DIR="{{ backup_dir }}"
+RETENTION_DAYS="{{ backup_retention_days }}"
+STAMP=$(date '+%Y-%m-%d')
+
+mkdir -p "${BACKUP_DIR}"
+
+{% for db in backup_databases %}
+OUT="${BACKUP_DIR}/{{ db }}-${STAMP}.sql.gz"
+mysqldump --single-transaction --routines --triggers --events "{{ db }}" \
+  | gzip > "${OUT}.tmp"
+mv "${OUT}.tmp" "${OUT}"
+chmod 0600 "${OUT}"
+{% endfor %}
+
+# Prune date-stamped dumps older than the retention window.
+find "${BACKUP_DIR}" -type f -name '*.sql.gz' -mtime "+${RETENTION_DAYS}" -delete
