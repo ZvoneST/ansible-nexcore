@@ -37,13 +37,13 @@ ok: [servera -> localhost] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo':
 ok: [servera -> localhost] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 
 TASK [users : Deploy SSH authorised keys] **************************************
-ok: [serverb] => (item={'name': 'ops01', 'groups': ['ops'], 'sudo': True})
 ok: [servera] => (item={'name': 'ops01', 'groups': ['ops'], 'sudo': True})
+ok: [serverb] => (item={'name': 'ops01', 'groups': ['ops'], 'sudo': True})
 ok: [servera] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [servera] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
-ok: [serverb] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
 ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
+ok: [serverb] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
 ok: [serverb] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 
 TASK [users : Disable SSH password authentication] *****************************
@@ -80,8 +80,8 @@ TASK [security : Open required ports for this host] ****************************
 ok: [servera] => (item={'port': 80, 'proto': 'tcp'})
 ok: [serverb] => (item={'port': 2049, 'proto': 'tcp'})
 ok: [servera] => (item={'port': 25, 'proto': 'tcp'})
-ok: [servera] => (item={'port': 53, 'proto': 'tcp'})
 ok: [serverb] => (item={'port': 3306, 'proto': 'tcp'})
+ok: [servera] => (item={'port': 53, 'proto': 'tcp'})
 ok: [servera] => (item={'port': 53, 'proto': 'udp'})
 ok: [servera] => (item={'port': 514, 'proto': 'tcp'})
 
@@ -196,6 +196,20 @@ ok: [serverb]
 TASK [storage : Enable and start NFS server] ***********************************
 ok: [serverb]
 
+PLAY [Nightly database backups — serverb] **************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [serverb]
+
+TASK [backup : Ensure backup directory exists] *********************************
+ok: [serverb]
+
+TASK [backup : Deploy nightly database backup script] **************************
+ok: [serverb]
+
+TASK [backup : Schedule nightly database backup] *******************************
+ok: [serverb]
+
 PLAY [Apache + MediaWiki + WordPress — servera] ********************************
 
 TASK [Gathering Facts] *********************************************************
@@ -286,7 +300,7 @@ TASK [logging : Install rsyslog] ***********************************************
 ok: [servera]
 ok: [serverb]
 
-TASK [logging : Deploy rsyslog configuration for this hosts role] *************
+TASK [logging : Deploy rsyslog configuration for this host role] *************
 ok: [servera]
 ok: [serverb]
 
@@ -334,5 +348,5 @@ ok: [serverb]
 
 PLAY RECAP *********************************************************************
 servera                    : ok=51   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
-serverb                    : ok=54   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+serverb                    : ok=58   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
 ```

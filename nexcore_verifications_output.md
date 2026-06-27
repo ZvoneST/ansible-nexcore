@@ -374,8 +374,8 @@ ok: [serverb] => (item=mkt01) => {
 }
 
 TASK [Read sshd_config] ********************************************************
-ok: [servera]
 ok: [serverb]
+ok: [servera]
 
 TASK [Assert SSH password authentication is disabled] **************************
 ok: [servera] => {
@@ -586,7 +586,7 @@ TASK [Resolve wiki and www A records] ******************************************
 ok: [servera] => (item=wiki.nexcore.local)
 ok: [servera] => (item=www.nexcore.local)
 
-TASK [Assert A records resolve to serveras IP] ********************************
+TASK [Assert A records resolve to servera IP] ********************************
 ok: [servera] => (item=wiki.nexcore.local) => {
     "ansible_loop_var": "item",
     "changed": false,
@@ -599,8 +599,8 @@ ok: [servera] => (item=wiki.nexcore.local) => {
             "wiki.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.025384",
-        "end": "2026-06-27 09:45:38.943076",
+        "delta": "0:00:00.025020",
+        "end": "2026-06-27 10:50:13.777089",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -619,7 +619,7 @@ ok: [servera] => (item=wiki.nexcore.local) => {
         "item": "wiki.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 09:45:38.917692",
+        "start": "2026-06-27 10:50:13.752069",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -641,8 +641,8 @@ ok: [servera] => (item=www.nexcore.local) => {
             "www.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.025103",
-        "end": "2026-06-27 09:45:39.917819",
+        "delta": "0:00:00.024924",
+        "end": "2026-06-27 10:50:14.996685",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -661,7 +661,7 @@ ok: [servera] => (item=www.nexcore.local) => {
         "item": "www.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 09:45:39.892716",
+        "start": "2026-06-27 10:50:14.971761",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -845,8 +845,8 @@ ok: [servera] => (item=/var/www/wiki) => {
             "-Zd",
             "/var/www/wiki"
         ],
-        "delta": "0:00:01.005211",
-        "end": "2026-06-27 09:45:46.396469",
+        "delta": "0:00:00.003515",
+        "end": "2026-06-27 10:50:19.340641",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -865,7 +865,7 @@ ok: [servera] => (item=/var/www/wiki) => {
         "item": "/var/www/wiki",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 09:45:45.391258",
+        "start": "2026-06-27 10:50:19.337126",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wiki",
@@ -886,8 +886,8 @@ ok: [servera] => (item=/var/www/wordpress) => {
             "-Zd",
             "/var/www/wordpress"
         ],
-        "delta": "0:00:01.004917",
-        "end": "2026-06-27 09:45:48.431188",
+        "delta": "0:00:00.003367",
+        "end": "2026-06-27 10:50:20.239127",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -906,7 +906,7 @@ ok: [servera] => (item=/var/www/wordpress) => {
         "item": "/var/www/wordpress",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 09:45:47.426271",
+        "start": "2026-06-27 10:50:20.235760",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wordpress",
@@ -1018,7 +1018,34 @@ ok: [serverb] => {
     "msg": "All assertions passed"
 }
 
+TASK [Stat the backup directory] ***********************************************
+ok: [serverb]
+
+TASK [Assert the backup directory exists, is root-owned and private] ***********
+ok: [serverb] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Stat the backup script] **************************************************
+ok: [serverb]
+
+TASK [Assert the backup script is present and executable by root only] *********
+ok: [serverb] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [Read root crontab] *******************************************************
+ok: [serverb]
+
+TASK [Assert the nightly backup cron job is scheduled] *************************
+ok: [serverb] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
 PLAY RECAP *********************************************************************
 servera                    : ok=46   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-serverb                    : ok=42   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+serverb                    : ok=48   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
