@@ -6,6 +6,7 @@ firewall_ports:
   - { port: 53, proto: tcp }   # DNS TCP
   - { port: 53, proto: udp }   # DNS UDP
   - { port: 514, proto: tcp }  # rsyslog receiver
+  - { port: "{{ imap_port }}", proto: tcp }  # Dovecot IMAP
 
 # rsyslog role: this host receives logs
 rsyslog_role: receiver

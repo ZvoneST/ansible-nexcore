@@ -23,3 +23,12 @@ php_packages:
   - php-intl
   # php-json is not a standalone package on RHEL 9 / PHP 8 — the JSON
   # extension is built into core (provided by php-common).
+
+# Mail (Postfix delivery + Dovecot IMAP retrieval)
+# Per-user Maildir under each home directory. The same value is consumed by
+# Postfix (home_mailbox) and Dovecot (mail_location) so the two never drift.
+mail_spool_dir: Maildir
+# IMAP lets users pull their mail programmatically (mutt and similar clients).
+# Plaintext on the trusted LAN to mirror the lab's no-TLS posture
+# (smtp_use_tls = no in main.cf).
+imap_port: 143

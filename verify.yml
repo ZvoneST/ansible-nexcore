@@ -95,13 +95,29 @@
       register: fw_ports
       changed_when: false
 
-    - name: Assert each required port is open
+    - name: Assert each network-open port is open
       ansible.builtin.assert:
         that: "(item.port ~ '/' ~ item.proto) in fw_ports.stdout"
         fail_msg: "Port {{ item.port }}/{{ item.proto }} is not open in firewalld"
-      loop: "{{ firewall_ports }}"
+      loop: "{{ firewall_ports | rejectattr('source', 'defined') | list }}"
       loop_control:
         label: "{{ item.port }}/{{ item.proto }}"
+
+    - name: List firewall rich rules
+      ansible.builtin.command: firewall-cmd --list-rich-rules
+      register: fw_rich
+      changed_when: false
+
+    - name: Assert each source-restricted port is open only from its source
+      ansible.builtin.assert:
+        that:
+          - "('port port=\"' ~ item.port ~ '\" protocol=\"' ~ item.proto ~ '\"') in fw_rich.stdout"
+          - "('source address=\"' ~ item.source ~ '\"') in fw_rich.stdout"
+          - "(item.port ~ '/' ~ item.proto) not in fw_ports.stdout"
+        fail_msg: "Port {{ item.port }}/{{ item.proto }} is not restricted to source {{ item.source }} via a rich rule"
+      loop: "{{ firewall_ports | selectattr('source', 'defined') | list }}"
+      loop_control:
+        label: "{{ item.port }}/{{ item.proto }} from {{ item.source }}"
 
     # BR-09/BR-11 — logging + rotation
     - name: Assert rsyslog is running
@@ -288,6 +304,65 @@
       ansible.builtin.assert:
         that: "domain in postfix_dest.stdout"
         fail_msg: "{{ domain }} not present in postfix mydestination"
+
+    - name: Read postfix home_mailbox
+      ansible.builtin.command: postconf -h home_mailbox
+      register: postfix_mailbox
+      changed_when: false
+
+    - name: Assert postfix delivers into the shared Maildir
+      ansible.builtin.assert:
+        that: "postfix_mailbox.stdout == (mail_spool_dir ~ '/')"
+        fail_msg: "postfix home_mailbox is '{{ postfix_mailbox.stdout }}', expected {{ mail_spool_dir }}/ (Dovecot would read a different path)"
+
+    # Bonus — Dovecot IMAP retrieval
+    - name: Assert dovecot is running
+      ansible.builtin.assert:
+        that: "ansible_facts.services['dovecot.service'].state == 'running'"
+        fail_msg: "dovecot is not running"
+
+    - name: Read effective dovecot protocols and mail_location
+      ansible.builtin.command: "doveconf -h protocols mail_location"
+      register: dovecot_cfg
+      changed_when: false
+
+    - name: Assert dovecot serves IMAP from the same Maildir as postfix
+      ansible.builtin.assert:
+        that:
+          - "'imap' in dovecot_cfg.stdout"
+          - "('maildir:~/' ~ mail_spool_dir) in dovecot_cfg.stdout"
+        fail_msg: "dovecot is not configured for IMAP on maildir:~/{{ mail_spool_dir }}"
+
+    - name: Check the IMAP port is listening
+      ansible.builtin.command: "ss -H -ltn sport = :{{ imap_port }}"
+      register: imap_listen
+      changed_when: false
+
+    - name: Assert dovecot is listening on the IMAP port
+      ansible.builtin.assert:
+        that: "imap_listen.stdout | length > 0"
+        fail_msg: "Nothing is listening on IMAP port {{ imap_port }} on {{ inventory_hostname }}"
+
+    - name: Locate the mutt IMAP client
+      ansible.builtin.command: command -v mutt
+      register: mutt_bin
+      changed_when: false
+      failed_when: false
+
+    - name: Assert a mail client (mutt) is installed for retrieval
+      ansible.builtin.assert:
+        that: "mutt_bin.rc == 0"
+        fail_msg: "mutt is not installed — users cannot retrieve mail with the documented client"
+
+    - name: Read system mutt defaults
+      ansible.builtin.command: cat /etc/Muttrc.local
+      register: muttrc
+      changed_when: false
+
+    - name: Assert mutt is allowed to use the plaintext IMAP server
+      ansible.builtin.assert:
+        that: "'set ssl_force_tls = no' in muttrc.stdout"
+        fail_msg: "/etc/Muttrc.local does not disable forced TLS — mutt cannot connect to the plaintext server"
 
     # BR-09 — receiver side
     - name: Stat remote log directory

@@ -4,6 +4,7 @@
     name:
       - postfix
       - s-nail
+      - mutt   # IMAP client for retrieving mail (project spec example)
     state: present
 
 - name: Deploy Postfix main.cf from template
@@ -20,3 +21,40 @@
     name: postfix
     state: started
     enabled: true
+
+# --- Dovecot IMAP: lets users retrieve their Maildir mail with mutt etc. ---
+
+- name: Install Dovecot IMAP server
+  ansible.builtin.dnf:
+    name: dovecot
+    state: present
+
+- name: Deploy Dovecot configuration from template
+  ansible.builtin.template:
+    src: dovecot.conf.j2
+    dest: /etc/dovecot/dovecot.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: doveconf -c %s
+  notify: Restart dovecot
+
+- name: Enable and start Dovecot
+  ansible.builtin.service:
+    name: dovecot
+    state: started
+    enabled: true
+
+# Dovecot runs plaintext (ssl = no) to match the lab's no-TLS posture, but
+# modern mutt defaults to ssl_force_tls = yes and would refuse to connect.
+# Allow plaintext system-wide so the bundled client works against our server.
+- name: Allow mutt to use the plaintext IMAP server
+  ansible.builtin.copy:
+    dest: /etc/Muttrc.local
+    content: |
+      # Managed by Ansible — do not edit manually
+      set ssl_starttls = no
+      set ssl_force_tls = no
+    owner: root
+    group: root
+    mode: '0644'

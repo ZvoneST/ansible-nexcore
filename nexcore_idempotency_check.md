@@ -23,8 +23,8 @@ ok: [serverb] => (item={'name': 'ops01', 'groups': ['ops'], 'sudo': True})
 ok: [servera] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [servera] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
-ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
+ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 ok: [serverb] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 
 TASK [users : Ensure control-node SSH key directory exists] ********************
@@ -77,14 +77,21 @@ ok: [servera]
 ok: [serverb]
 
 TASK [security : Open required ports for this host] ****************************
-ok: [servera] => (item={'port': 80, 'proto': 'tcp'})
-ok: [serverb] => (item={'port': 2049, 'proto': 'tcp'})
-ok: [servera] => (item={'port': 25, 'proto': 'tcp'})
-ok: [serverb] => (item={'port': 3306, 'proto': 'tcp'})
-ok: [servera] => (item={'port': 53, 'proto': 'tcp'})
-ok: [servera] => (item={'port': 53, 'proto': 'udp'})
-ok: [servera] => (item={'port': 514, 'proto': 'tcp'})
-ok: [servera] => (item={'port': 143, 'proto': 'tcp'})
+ok: [servera] => (item=80/tcp)
+ok: [serverb] => (item=2049/tcp)
+ok: [servera] => (item=25/tcp)
+ok: [servera] => (item=53/tcp)
+ok: [servera] => (item=53/udp)
+ok: [servera] => (item=514/tcp)
+ok: [servera] => (item=143/tcp)
+
+TASK [security : Open source-restricted ports for this host] *******************
+skipping: [servera]
+ok: [serverb] => (item=3306/tcp from 192.168.50.85)
+
+TASK [security : Remove any network-wide opening for source-restricted ports] ***
+skipping: [servera]
+ok: [serverb] => (item=3306/tcp)
 
 TASK [security : Assert SELinux is enforcing] **********************************
 ok: [servera]
@@ -360,6 +367,6 @@ ok: [servera]
 ok: [serverb]
 
 PLAY RECAP *********************************************************************
-servera                    : ok=55   changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
-serverb                    : ok=58   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+servera                    : ok=55   changed=0    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+serverb                    : ok=60   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
 ```

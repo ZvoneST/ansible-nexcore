@@ -1,8 +1,12 @@
 ---
 # Ports open on serverb
+# Entries with a `source` are installed as firewalld rich rules so the port is
+# only reachable from that address; entries without one open the port to all.
 firewall_ports:
   - { port: 2049, proto: tcp }  # NFS
-  - { port: 3306, proto: tcp }  # MySQL (internal only — restrict at firewall level)
+  # MySQL: reachable only from servera, the sole DB client (DB users are
+  # likewise granted only from servera's IP in the database role).
+  - { port: 3306, proto: tcp, source: "{{ hostvars['servera']['ansible_host'] }}" }
 
 # rsyslog role: this host forwards logs
 rsyslog_role: forwarder

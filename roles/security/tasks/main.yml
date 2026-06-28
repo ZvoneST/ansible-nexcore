@@ -16,7 +16,29 @@
     permanent: true
     immediate: true
     state: enabled
-  loop: "{{ firewall_ports }}"
+  loop: "{{ firewall_ports | rejectattr('source', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto }}"
+
+- name: Open source-restricted ports for this host
+  ansible.posix.firewalld:
+    rich_rule: "rule family=ipv4 source address={{ item.source }} port port={{ item.port }} protocol={{ item.proto }} accept"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ firewall_ports | selectattr('source', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto }} from {{ item.source }}"
+
+- name: Remove any network-wide opening for source-restricted ports
+  ansible.posix.firewalld:
+    port: "{{ item.port }}/{{ item.proto }}"
+    permanent: true
+    immediate: true
+    state: disabled
+  loop: "{{ firewall_ports | selectattr('source', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.port }}/{{ item.proto }}"
 
 - name: Assert SELinux is enforcing
   ansible.builtin.command: getenforce

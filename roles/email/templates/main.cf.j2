@@ -9,8 +9,8 @@ myorigin   = $mydomain
 inet_interfaces = all
 mydestination  = $myhostname, localhost.$mydomain, localhost, $mydomain
 
-# Delivery
-home_mailbox = Maildir/
+# Delivery — Maildir per user home, also read by Dovecot for IMAP retrieval
+home_mailbox = {{ mail_spool_dir }}/
 mailbox_size_limit = 0
 
 # Relay

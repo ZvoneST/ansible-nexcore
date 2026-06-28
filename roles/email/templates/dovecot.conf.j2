@@ -1,0 +1,42 @@
+# Managed by Ansible — do not edit manually
+#
+# Self-contained Dovecot configuration (no conf.d includes) so the whole
+# IMAP setup is described in one templated file and stays idempotent.
+
+# Only offer IMAP — no POP3, no LMTP. Mail is delivered by Postfix.
+protocols = imap
+
+# Listen on all interfaces; the firewall restricts who can reach port {{ imap_port }}.
+listen = *
+
+# Read the same Maildir that Postfix delivers into ({{ mail_spool_dir }}/ in each home).
+mail_location = maildir:~/{{ mail_spool_dir }}
+
+# Authenticate against system accounts (PAM / /etc/shadow). Users therefore
+# need a local password set to log in with mutt; SSH key-only auth is
+# unaffected and still governs shell access.
+userdb {
+  driver = passwd
+}
+passdb {
+  driver = pam
+}
+
+# Lab posture: plaintext IMAP without TLS, matching smtp_use_tls = no in
+# main.cf. On the trusted NexCore LAN only — do not expose beyond it.
+ssl = no
+disable_plaintext_auth = no
+
+service imap-login {
+  inet_listener imap {
+    port = {{ imap_port }}
+  }
+  # Disable the implicit TLS listener (993) — we run plaintext only.
+  inet_listener imaps {
+    port = 0
+  }
+}
+
+namespace inbox {
+  inbox = yes
+}

@@ -19,8 +19,8 @@ ok: [serverb] => (item={'name': 'ops01', 'groups': ['ops'], 'sudo': True})
 ok: [servera] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [servera] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
-ok: [serverb] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
 ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
+ok: [serverb] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
 ok: [serverb] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 
 TASK [Stat sudoers files for privileged users] *********************************
@@ -419,7 +419,7 @@ TASK [List open firewall ports] ************************************************
 ok: [servera]
 ok: [serverb]
 
-TASK [Assert each required port is open] ***************************************
+TASK [Assert each network-open port is open] ***********************************
 ok: [servera] => (item=80/tcp) => {
     "ansible_loop_var": "item",
     "changed": false,
@@ -447,30 +447,12 @@ ok: [servera] => (item=53/tcp) => {
     },
     "msg": "All assertions passed"
 }
-ok: [serverb] => (item=2049/tcp) => {
-    "ansible_loop_var": "item",
-    "changed": false,
-    "item": {
-        "port": 2049,
-        "proto": "tcp"
-    },
-    "msg": "All assertions passed"
-}
 ok: [servera] => (item=53/udp) => {
     "ansible_loop_var": "item",
     "changed": false,
     "item": {
         "port": 53,
         "proto": "udp"
-    },
-    "msg": "All assertions passed"
-}
-ok: [serverb] => (item=3306/tcp) => {
-    "ansible_loop_var": "item",
-    "changed": false,
-    "item": {
-        "port": 3306,
-        "proto": "tcp"
     },
     "msg": "All assertions passed"
 }
@@ -483,12 +465,38 @@ ok: [servera] => (item=514/tcp) => {
     },
     "msg": "All assertions passed"
 }
+ok: [serverb] => (item=2049/tcp) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": {
+        "port": 2049,
+        "proto": "tcp"
+    },
+    "msg": "All assertions passed"
+}
 ok: [servera] => (item=143/tcp) => {
     "ansible_loop_var": "item",
     "changed": false,
     "item": {
         "port": 143,
         "proto": "tcp"
+    },
+    "msg": "All assertions passed"
+}
+
+TASK [List firewall rich rules] ************************************************
+ok: [servera]
+ok: [serverb]
+
+TASK [Assert each source-restricted port is open only from its source] *********
+skipping: [servera]
+ok: [serverb] => (item=3306/tcp from 192.168.50.85) => {
+    "ansible_loop_var": "item",
+    "changed": false,
+    "item": {
+        "port": 3306,
+        "proto": "tcp",
+        "source": "192.168.50.85"
     },
     "msg": "All assertions passed"
 }
@@ -608,8 +616,8 @@ ok: [servera] => (item=wiki.nexcore.local) => {
             "wiki.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.025320",
-        "end": "2026-06-27 15:02:26.605548",
+        "delta": "0:00:00.025035",
+        "end": "2026-06-27 16:26:53.956007",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -628,7 +636,7 @@ ok: [servera] => (item=wiki.nexcore.local) => {
         "item": "wiki.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 15:02:26.580228",
+        "start": "2026-06-27 16:26:53.930972",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -650,8 +658,8 @@ ok: [servera] => (item=www.nexcore.local) => {
             "www.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.025336",
-        "end": "2026-06-27 15:02:27.645691",
+        "delta": "0:00:00.024784",
+        "end": "2026-06-27 16:26:55.007071",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -670,7 +678,7 @@ ok: [servera] => (item=www.nexcore.local) => {
         "item": "www.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 15:02:27.620355",
+        "start": "2026-06-27 16:26:54.982287",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -854,8 +862,8 @@ ok: [servera] => (item=/var/www/wiki) => {
             "-Zd",
             "/var/www/wiki"
         ],
-        "delta": "0:00:00.003579",
-        "end": "2026-06-27 15:02:32.237489",
+        "delta": "0:00:00.003528",
+        "end": "2026-06-27 16:26:58.842370",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -874,7 +882,7 @@ ok: [servera] => (item=/var/www/wiki) => {
         "item": "/var/www/wiki",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 15:02:32.233910",
+        "start": "2026-06-27 16:26:58.838842",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wiki",
@@ -895,8 +903,8 @@ ok: [servera] => (item=/var/www/wordpress) => {
             "-Zd",
             "/var/www/wordpress"
         ],
-        "delta": "0:00:01.004901",
-        "end": "2026-06-27 15:02:34.319620",
+        "delta": "0:00:00.003420",
+        "end": "2026-06-27 16:26:59.798823",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -915,7 +923,7 @@ ok: [servera] => (item=/var/www/wordpress) => {
         "item": "/var/www/wordpress",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 15:02:33.314719",
+        "start": "2026-06-27 16:26:59.795403",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wordpress",
@@ -1106,6 +1114,6 @@ ok: [serverb] => {
 }
 
 PLAY RECAP *********************************************************************
-servera                    : ok=57   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-serverb                    : ok=48   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+servera                    : ok=58   changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+serverb                    : ok=50   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```
