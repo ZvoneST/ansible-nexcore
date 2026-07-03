@@ -168,6 +168,17 @@
         fail_msg: "AutoFS is not fully configured / running"
 
     # BR-10 — patching cron jobs + health script
+    - name: Locate the needs-restarting helper (dnf-utils)
+      ansible.builtin.command: command -v needs-restarting
+      register: needs_restarting_bin
+      changed_when: false
+      failed_when: false
+
+    - name: Assert needs-restarting is installed for reboot detection
+      ansible.builtin.assert:
+        that: "needs_restarting_bin.rc == 0"
+        fail_msg: "needs-restarting missing — install dnf-utils so patching can detect required reboots"
+
     - name: Stat health check script
       ansible.builtin.stat:
         path: /usr/local/bin/nexcore-health.sh

@@ -1,4 +1,9 @@
 ---
+- name: Ensure dnf-utils is installed (provides needs-restarting)
+  ansible.builtin.dnf:
+    name: dnf-utils
+    state: present
+
 - name: Update all packages
   ansible.builtin.dnf:
     name: '*'
