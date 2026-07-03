@@ -19,8 +19,8 @@ ok: [serverb] => (item={'name': 'ops01', 'groups': ['ops'], 'sudo': True})
 ok: [servera] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev01', 'groups': ['dev'], 'sudo': False})
 ok: [servera] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
-ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 ok: [serverb] => (item={'name': 'dev02', 'groups': ['dev'], 'sudo': False})
+ok: [servera] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 ok: [serverb] => (item={'name': 'mkt01', 'groups': ['marketing'], 'sudo': False})
 
 TASK [Stat sudoers files for privileged users] *********************************
@@ -54,7 +54,7 @@ ok: [servera] => (item=ops01) => {
             "sudo": true
         },
         "stat": {
-            "atime": 1782540768.5294096,
+            "atime": 1782842875.8994238,
             "attr_flags": "",
             "attributes": [],
             "block_size": 4096,
@@ -128,7 +128,7 @@ ok: [serverb] => (item=ops01) => {
             "sudo": true
         },
         "stat": {
-            "atime": 1782541264.0560772,
+            "atime": 1782842864.587515,
             "attr_flags": "",
             "attributes": [],
             "block_size": 4096,
@@ -557,6 +557,20 @@ ok: [serverb] => {
     "msg": "All assertions passed"
 }
 
+TASK [Locate the needs-restarting helper (dnf-utils)] **************************
+ok: [servera]
+ok: [serverb]
+
+TASK [Assert needs-restarting is installed for reboot detection] ***************
+ok: [servera] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+ok: [serverb] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
 TASK [Stat health check script] ************************************************
 ok: [servera]
 ok: [serverb]
@@ -603,7 +617,7 @@ TASK [Resolve wiki and www A records] ******************************************
 ok: [servera] => (item=wiki.nexcore.local)
 ok: [servera] => (item=www.nexcore.local)
 
-TASK [Assert A records resolve to servera IP] **********************************
+TASK [Assert A records resolve to servera IP] ****************?*****************
 ok: [servera] => (item=wiki.nexcore.local) => {
     "ansible_loop_var": "item",
     "changed": false,
@@ -616,8 +630,8 @@ ok: [servera] => (item=wiki.nexcore.local) => {
             "wiki.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.025035",
-        "end": "2026-06-27 16:26:53.956007",
+        "delta": "0:00:00.025654",
+        "end": "2026-06-30 21:05:09.325564",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -636,7 +650,7 @@ ok: [servera] => (item=wiki.nexcore.local) => {
         "item": "wiki.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 16:26:53.930972",
+        "start": "2026-06-30 21:05:09.299910",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -658,8 +672,8 @@ ok: [servera] => (item=www.nexcore.local) => {
             "www.nexcore.local",
             "@127.0.0.1"
         ],
-        "delta": "0:00:00.024784",
-        "end": "2026-06-27 16:26:55.007071",
+        "delta": "0:00:00.024780",
+        "end": "2026-06-30 21:05:10.625971",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -678,7 +692,7 @@ ok: [servera] => (item=www.nexcore.local) => {
         "item": "www.nexcore.local",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 16:26:54.982287",
+        "start": "2026-06-30 21:05:10.601191",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "192.168.50.85",
@@ -729,7 +743,7 @@ ok: [servera] => (item=/etc/httpd/conf.d/wiki.conf) => {
         },
         "item": "/etc/httpd/conf.d/wiki.conf",
         "stat": {
-            "atime": 1782543943.621858,
+            "atime": 1782843253.2463567,
             "attr_flags": "",
             "attributes": [],
             "block_size": 4096,
@@ -797,7 +811,7 @@ ok: [servera] => (item=/etc/httpd/conf.d/wordpress.conf) => {
         },
         "item": "/etc/httpd/conf.d/wordpress.conf",
         "stat": {
-            "atime": 1782543946.351879,
+            "atime": 1782843254.7773685,
             "attr_flags": "",
             "attributes": [],
             "block_size": 4096,
@@ -862,8 +876,8 @@ ok: [servera] => (item=/var/www/wiki) => {
             "-Zd",
             "/var/www/wiki"
         ],
-        "delta": "0:00:00.003528",
-        "end": "2026-06-27 16:26:58.842370",
+        "delta": "0:00:01.005037",
+        "end": "2026-06-30 21:05:16.350047",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -882,7 +896,7 @@ ok: [servera] => (item=/var/www/wiki) => {
         "item": "/var/www/wiki",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 16:26:58.838842",
+        "start": "2026-06-30 21:05:15.345010",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wiki",
@@ -903,8 +917,8 @@ ok: [servera] => (item=/var/www/wordpress) => {
             "-Zd",
             "/var/www/wordpress"
         ],
-        "delta": "0:00:00.003420",
-        "end": "2026-06-27 16:26:59.798823",
+        "delta": "0:00:00.003481",
+        "end": "2026-06-30 21:05:17.565243",
         "failed": false,
         "invocation": {
             "module_args": {
@@ -923,7 +937,7 @@ ok: [servera] => (item=/var/www/wordpress) => {
         "item": "/var/www/wordpress",
         "msg": "",
         "rc": 0,
-        "start": "2026-06-27 16:26:59.795403",
+        "start": "2026-06-30 21:05:17.561762",
         "stderr": "",
         "stderr_lines": [],
         "stdout": "unconfined_u:object_r:httpd_sys_rw_content_t:s0 /var/www/wordpress",
@@ -1114,6 +1128,6 @@ ok: [serverb] => {
 }
 
 PLAY RECAP *********************************************************************
-servera                    : ok=58   changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
-serverb                    : ok=50   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+servera                    : ok=60   changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+serverb                    : ok=52   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```

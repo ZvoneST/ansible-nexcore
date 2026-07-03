@@ -342,6 +342,10 @@ TASK [Gathering Facts] *********************************************************
 ok: [servera]
 ok: [serverb]
 
+TASK [patching : Ensure dnf-utils is installed (provides needs-restarting)] ****
+ok: [servera]
+ok: [serverb]
+
 TASK [patching : Update all packages] ******************************************
 ok: [servera]
 ok: [serverb]
@@ -367,6 +371,6 @@ ok: [servera]
 ok: [serverb]
 
 PLAY RECAP *********************************************************************
-servera                    : ok=55   changed=0    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
-serverb                    : ok=60   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+servera                    : ok=56   changed=0    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+serverb                    : ok=61   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
 ```

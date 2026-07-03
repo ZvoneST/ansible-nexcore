@@ -16,9 +16,15 @@ files/ssh_keys/*
 # Ansible tests
 tests/static_checks.sh
 
+vars/secrets.yml
+
 # Editor / OS noise
 *.swp
 *~
 .DS_Store
 .vscode/
+
+# agents
+.claude/
+CLAUDE.md
 
