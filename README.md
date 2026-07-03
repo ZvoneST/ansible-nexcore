@@ -37,15 +37,15 @@ The solution covers eleven business requirements (BR-01 to BR-11): from user man
 
 ## 2. Architecture and Inventory
 
-The environment consists of a control node (workstation), from which Ansible is executed, and two managed servers logically divided into the `web` and `db` groups. The workstation has the IP address `192.168.50.95` and is not managed through the inventory. It is the starting point from which all playbooks are executed, where users' SSH keys are generated, and where the vault password used to decrypt secrets is stored.
+The environment consists of a control node (workstation), from which Ansible is executed, and two managed servers logically divided into the `web` and `db` groups.
 
-This separation allows individual roles to be applied only to the appropriate servers. The environment domain is `nexcore.local`, and the internal network is `192.168.50.0/24`.
+This separation allows individual roles to be applied only to the appropriate servers. The environment domain is `nexcore.local`.
 
 | Node | IP / Group | Role in the Environment |
 | --- | --- | --- |
-| `workstation` | `192.168.50.95` - control node | Control node: running Ansible playbooks, generating and storing users' SSH keys and the vault password (outside the inventory of managed servers). |
-| `servera` | `192.168.50.85` - `web` | DNS (`dnsmasq`), Apache + MediaWiki 1.41.1 + WordPress 6.5.3, Postfix + Dovecot (IMAP), rsyslog log receiver. |
-| `serverb` | `192.168.50.65` - `db` | MariaDB, LVM + NFS shared storage, nightly database backups, rsyslog log sender. |
+| `workstation` | control node | Control node: running Ansible playbooks, generating and storing users' SSH keys and the vault password (outside the inventory of managed servers). |
+| `servera` | `web` | DNS (`dnsmasq`), Apache + MediaWiki 1.41.1 + WordPress 6.5.3, Postfix + Dovecot (IMAP), rsyslog log receiver. |
+| `serverb` | `db` | MariaDB, LVM + NFS shared storage, nightly database backups, rsyslog log sender. |
 | `servera` + `serverb` | `all` | Users and SSH, security hardening (`firewalld` + SELinux), AutoFS shared directory, patches, and health checks. |
 
 Ansible connects to the servers as the `ansible` service user via an SSH key and elevates privileges using `sudo`. Variables are arranged hierarchically: `group_vars/all.yml` contains global settings (domain, DNS, user list), `group_vars/web.yml` and `group_vars/db.yml` contain layer-specific settings, and the files under `host_vars/` contain host-specific settings such as open firewall ports and the role in the logging system.
