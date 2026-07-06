@@ -50,7 +50,7 @@ lvm_backing_file: /home/nexcore-storage.img
 lvm_backing_file_size: 11g
 lvm_loop_service: nexcore-loopback.service
 
-nfs_allowed_network: "192.168.50.0/24"
+nfs_allowed_network: "***.***.**.*/**"
 
 # Nightly database backups (consumed by the backup role).
 backup_dir: /var/backups/nexcore
